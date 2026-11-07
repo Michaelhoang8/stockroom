@@ -1,0 +1,1 @@
+"""Stockroom: standalone application."""

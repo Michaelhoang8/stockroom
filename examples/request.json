@@ -1,0 +1,8 @@
+{
+  "path": "/api/products",
+  "body": {
+    "name": "Test product",
+    "sku": "SMOKE-01",
+    "reorder_point": 3
+  }
+}

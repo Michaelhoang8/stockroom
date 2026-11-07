@@ -1,0 +1,38 @@
+{
+  "app": "stockroom",
+  "mode": "inventory",
+  "source": "Michaelhoang8/portfolio-lab",
+  "backend_definitions": {
+    "capabilities": [
+      "stock_plan"
+    ],
+    "validation": [
+      "ConflictError",
+      "NotFoundError",
+      "ValidationError",
+      "integer",
+      "text"
+    ],
+    "data_apps": [
+      "safe_csv"
+    ],
+    "services": [
+      "_snapshot_rows",
+      "movement_create",
+      "movement_csv",
+      "product_create",
+      "product_details",
+      "snapshot"
+    ],
+    "db": [
+      "SCHEMA",
+      "connect",
+      "initialize",
+      "rows"
+    ],
+    "json_input": [
+      "decode",
+      "read_exact"
+    ]
+  }
+}
