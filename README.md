@@ -17,6 +17,10 @@ Create records using the forms. This app starts with an empty, independent datab
 
 SQLite state lives in `data/stockroom.db` and is ignored by Git. `--database /path/to/app.db` selects another database. Uploaded analysis input is processed in memory. No other repository or shared service is required.
 
+## Interface
+
+Inventory, movements, and replenishment each have a separate view. The inventory table emphasizes stock quantities and reorder status; selecting a product opens its version-checked editor. Product creation and stock movements use side panels that close after successful writes. Replenishment retains its demand-window calculation, export options, and invalidation when stock changes. Wide tables scroll within their view on mobile.
+
 ## API example
 
 `examples/request.json` contains a fictional request body and its endpoint. Browser analysis requests use `Content-Type: application/json` and `X-Portfolio-Client: browser`; Notes requests use `X-API-Key`. All routes are local to this app.

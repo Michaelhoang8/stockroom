@@ -1,11 +1,189 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stockroom</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/identities.css"><link rel="stylesheet" href="/observatory.css"><script src="/observatory.js" defer></script><script src="/identities.js" defer></script><script src="/capabilities.js" defer></script><script src="/rest_transport.js" defer></script><script src="/app.js" defer></script></head>
-<body data-app="inventory">
-<aside><a class="brand" href="/">◈ <span>Stockroom<small>LOCAL WORKSPACE</small></span></a><div class="nav-label">WORKSPACE</div><div class="aside-bottom"><span class="dot"></span> Local workspace<small>Python + SQLite + JavaScript<br>Your data stays on this machine.</small></div></aside>
-<main><header><span id="breadcrumb">Workspace / Issue Desk</span><button id="export" class="subtle">Export workspace JSON ↗</button></header><div id="notice" role="status" aria-live="polite"></div>
-
-<section id="inventory" class="page"><div class="heading"><div><div class="eyebrow">02 / OPERATIONS</div><h1>Stockroom<span>.</span></h1><p>Every unit accounted for. Every movement traceable.</p></div><span class="pill">Atomic stock updates</span></div><div id="inventory-stats" class="stats"></div><div class="panel table-wrap"><h2>Inventory overview</h2><details id="inventory-view-options" class="issue-view-options"><summary>Filter inventory</summary><div class="two-col"><label>Product name or SKU<input id="inventory-search" type="search" maxlength="200" placeholder="Find a product"></label><label>Stock status<select id="inventory-status"><option value="">All products</option><option value="reorder">At or below reorder point</option><option value="empty">Out of stock</option><option value="healthy">Above reorder point</option></select></label><label>Order by<select id="inventory-sort"><option value="name">Product name</option><option value="stock">Lowest stock first</option><option value="shortfall">Largest reorder shortfall</option></select></label></div><button id="reset-inventory-filters" type="button" hidden>Reset inventory filters</button></details><p id="inventory-count" class="hint" role="status"></p><table><thead><tr><th>Product / SKU</th><th>On hand</th><th>Reorder at</th><th>Status</th></tr></thead><tbody id="products"></tbody></table></div><details class="panel"><summary>Edit product details</summary><form id="product-edit-form"><label>Product to edit<select id="edit-product" required><option value="">Select a product</option></select></label><label>Product name<input name="name" required maxlength="200"></label><label>Reorder threshold<input name="reorder_point" type="number" min="0" max="1000000000" required></label><button class="primary">Save product details</button><button id="reload-product" type="button">Discard edits and load saved values</button><p class="help">SKU identifies this product throughout its ledger. Name and threshold edits use version checks; receipts and withdrawals remain in the movement form.</p><p class="product-feedback" role="status"></p></form></details><div class="two-col"><form id="product-form" class="panel"><h2>Add a product</h2><label>Product name<input name="name" required maxlength="200"></label><label>Unique SKU<input name="sku" required maxlength="40"></label><label>Reorder point<input name="reorder_point" type="number" min="0" max="1000000000" value="5" required></label><button class="primary">Add product</button></form><form id="movement-form" class="panel"><h2>Record a movement</h2><label>Product<select id="product-select" name="product_id" required></select></label><label>Quantity change<input name="delta" type="number" min="-1000000" max="1000000" required placeholder="10 to receive, -3 to withdraw"></label><label>Reason<input name="note" required maxlength="500" placeholder="Purchase order or shipment reference"></label><button class="primary">Record movement</button></form></div><div class="panel"><div class="section-head"><h2>Movement ledger <small>Latest 100</small></h2><a href="/api/movements.csv" download="stock-movements.csv">Export full ledger CSV</a></div><div id="movements"></div></div></section>
-
-<footer>Stockroom<span>Independent application · local processing</span></footer></main>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Stockroom</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/capabilities.js" defer></script>
+    <script src="/rest_transport.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body data-app="inventory">
+    <header>
+      <a class="brand" href="/">Stockroom</a>
+      <div id="inventory-stats" class="stats"></div>
+      <button id="export">Export JSON</button>
+    </header>
+    <main>
+      <span id="breadcrumb" hidden></span>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <section id="inventory" class="page">
+        <div class="workspace">
+          <nav class="sections" aria-label="Inventory views">
+            <button data-view="catalog" aria-pressed="true">Inventory</button
+            ><button data-view="ledger" aria-pressed="false">Movements</button
+            ><button data-view="planner" aria-pressed="false">
+              Replenishment
+            </button>
+          </nav>
+          <div class="content">
+            <section id="catalog-view">
+              <div class="section-head">
+                <h1>Inventory</h1>
+                <div class="actions">
+                  <button id="product-open">Add product</button
+                  ><button id="movement-open" class="primary">
+                    Record movement
+                  </button>
+                </div>
+              </div>
+              <details id="inventory-view-options" class="issue-view-options">
+                <summary>Filter inventory</summary>
+                <div class="two-col">
+                  <label
+                    >Product name or SKU<input
+                      id="inventory-search"
+                      type="search"
+                      maxlength="200"
+                      placeholder="Find a product" /></label
+                  ><label
+                    >Stock status<select id="inventory-status">
+                      <option value="">All products</option>
+                      <option value="reorder">At or below reorder point</option>
+                      <option value="empty">Out of stock</option>
+                      <option value="healthy">Above reorder point</option>
+                    </select></label
+                  ><label
+                    >Order by<select id="inventory-sort">
+                      <option value="name">Product name</option>
+                      <option value="stock">Lowest stock first</option>
+                      <option value="shortfall">
+                        Largest reorder shortfall
+                      </option>
+                    </select></label
+                  >
+                </div>
+                <button id="reset-inventory-filters" type="button" hidden>
+                  Reset inventory filters
+                </button>
+              </details>
+              <p id="inventory-count" class="hint" role="status"></p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Product / SKU</th>
+                      <th>On hand</th>
+                      <th>Reorder at</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="products"></tbody>
+                </table>
+              </div>
+            </section>
+            <section id="ledger-view" hidden>
+              <div class="section-head">
+                <h1>Movements <small>Latest 100</small></h1>
+                <a href="/api/movements.csv" download="stock-movements.csv"
+                  >Export CSV</a
+                >
+              </div>
+              <div id="movements"></div>
+            </section>
+            <section id="planner-view" hidden>
+              <div class="section-head"><h1>Replenishment</h1></div>
+              <div id="planner-mount"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+    <dialog id="product-dialog" aria-label="Add product">
+      <button data-close="product" class="close" aria-label="Close add product">
+        ×
+      </button>
+      <form id="product-form" class="panel">
+        <h2>Add a product</h2>
+        <label>Product name<input name="name" required maxlength="200" /></label
+        ><label>Unique SKU<input name="sku" required maxlength="40" /></label
+        ><label
+          >Reorder point<input
+            name="reorder_point"
+            type="number"
+            min="0"
+            max="1000000000"
+            value="5"
+            required /></label
+        ><button class="primary">Add product</button>
+      </form>
+    </dialog>
+    <dialog id="movement-dialog" aria-label="Record a movement">
+      <button data-close="movement" class="close" aria-label="Close movement">
+        ×
+      </button>
+      <form id="movement-form" class="panel">
+        <h2>Record a movement</h2>
+        <label
+          >Product<select
+            id="product-select"
+            name="product_id"
+            required
+          ></select></label
+        ><label
+          >Quantity change<input
+            name="delta"
+            type="number"
+            min="-1000000"
+            max="1000000"
+            required
+            placeholder="10 to receive, -3 to withdraw" /></label
+        ><label
+          >Reason<input
+            name="note"
+            required
+            maxlength="500"
+            placeholder="Purchase order or shipment reference" /></label
+        ><button class="primary">Record movement</button>
+      </form>
+    </dialog>
+    <dialog id="edit-dialog" aria-label="Edit product">
+      <div class="section-head">
+        <h2>Edit product</h2>
+        <button
+          data-close="edit"
+          class="close"
+          aria-label="Close product editor"
+        >
+          ×
+        </button>
+      </div>
+      <form id="product-edit-form">
+        <label
+          >Product to edit<select id="edit-product" required>
+            <option value="">Select a product</option>
+          </select></label
+        ><label
+          >Product name<input name="name" required maxlength="200" /></label
+        ><label
+          >Reorder threshold<input
+            name="reorder_point"
+            type="number"
+            min="0"
+            max="1000000000"
+            required /></label
+        ><button class="primary">Save product details</button
+        ><button id="reload-product" type="button">
+          Discard edits and load saved values
+        </button>
+        <p class="help">
+          SKU identifies this product throughout its ledger. Name and threshold
+          edits use version checks; receipts and withdrawals remain in the
+          movement form.
+        </p>
+        <p class="product-feedback" role="status"></p>
+      </form>
+    </dialog>
+  </body>
+</html>
